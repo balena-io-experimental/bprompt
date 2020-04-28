@@ -85,10 +85,14 @@ func switchAccount(name string) {
 
 func updateOneTrueToken(targetAcct balenaAccount) {
 	fmt.Printf("[FIXME] Updating token to %s\n", targetAcct.Name)
+	fmt.Println("[FIXME] You need to run:")
+	fmt.Println("    rm ~/.balena/token")
+	rmt.Printf("    ln -s ~/.balena/token_%s ~/.balena/token\n", targetAcct.TokenName)
 }
 
 func updateBalenaRc(targetAcct balenaAccount) {
 	fmt.Printf("[FIXME] Updating balenarc to %s\n", targetAcct.Name)
+	fmt.Printf("[FIXME] You need to run: yq write --inplace ~/.balenarc.yml balenaUrl %s\n", targetAcct.Url)
 }
 
 func findMatchingToken(targetToken string) string {
