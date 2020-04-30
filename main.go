@@ -78,7 +78,7 @@ func switchAccount(name string) {
 	if possibleToken == "" {
 		log.Fatal("I can't find that token!")
 	}
-	fmt.Printf("Found that token: %s", possibleToken)
+	fmt.Printf("Found that token: %s\n", possibleToken)
 	updateOneTrueToken(targetAcct)
 	updateBalenaRc(targetAcct)
 }
