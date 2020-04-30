@@ -84,16 +84,17 @@ func switchAccount(name string) {
 }
 
 func updateOneTrueToken(targetAcct balenaAccount) {
-	src := fmt.Sprintf("%s/%s", targetAcct.TokenName)
+	fmt.Printf("[DEBUG] Switching to %+v\n", targetAcct)
+	src := fmt.Sprintf("%s/token.%s", "/home/hugh/.balena", targetAcct.TokenName)
+	fmt.Printf("[DEBUG] Source will be %s\n", src)
 	target := "/home/hugh/.balena/token"
-	targetStat, err := os.Lstat(target)
-	if err != nil {
-		log.Fatalf("Could not check mode of %s!", target)
+	targetStat, _ := os.Lstat(target)
+	if targetStat != nil {
+		if string(targetStat.Mode().String()[0]) != "L" {
+			log.Fatalf("%s not a symlink, refusing to remove it! Stat: %+v", target, targetStat.Mode().String())
+		}
 	}
-	if targetStat.Mode() != os.ModeSymlink {
-		log.Fatalf("%s not a symlink, refusing to remove it!")
-	}
-	if err = os.Remove(target); err != nil {
+	if err := os.Remove(target); err != nil {
 		log.Fatalf("Could not remove %s!")
 	}
 	os.Symlink(src, target)
