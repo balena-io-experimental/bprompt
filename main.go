@@ -84,15 +84,25 @@ func switchAccount(name string) {
 }
 
 func updateOneTrueToken(targetAcct balenaAccount) {
-	fmt.Printf("[FIXME] Updating token to %s\n", targetAcct.Name)
-	fmt.Println("[FIXME] You need to run:")
-	fmt.Println("    rm ~/.balena/token")
-	rmt.Printf("    ln -s ~/.balena/token_%s ~/.balena/token\n", targetAcct.TokenName)
+	src := fmt.Sprintf("%s/%s", targetAcct.TokenName)
+	target := "/home/hugh/.balena/token"
+	targetStat, err := os.Lstat(target)
+	if err != nil {
+		log.Fatalf("Could not check mode of %s!", target)
+	}
+	if targetStat.Mode() != os.ModeSymlink {
+		log.Fatalf("%s not a symlink, refusing to remove it!")
+	}
+	if err = os.Remove(target); err != nil {
+		log.Fatalf("Could not remove %s!")
+	}
+	os.Symlink(src, target)
 }
 
 func updateBalenaRc(targetAcct balenaAccount) {
-	fmt.Printf("[FIXME] Updating balenarc to %s\n", targetAcct.Name)
-	fmt.Printf("[FIXME] You need to run: yq write --inplace ~/.balenarc.yml balenaUrl %s\n", targetAcct.Url)
+	// Not great, but: we can get away for now with just a simple printf.
+	urlString := []byte(fmt.Sprintf("balaneUrl: %s", targetAcct.Url))
+	ioutil.WriteFile("/home/hugh/.balenarc.yml", urlString, 0755)
 }
 
 func findMatchingToken(targetToken string) string {
