@@ -101,7 +101,7 @@ func updateOneTrueToken(targetAcct balenaAccount) {
 
 func updateBalenaRc(targetAcct balenaAccount) {
 	// Not great, but: we can get away for now with just a simple printf.
-	urlString := []byte(fmt.Sprintf("balaneUrl: %s", targetAcct.Url))
+	urlString := []byte(fmt.Sprintf("balenaUrl: %s", targetAcct.Url))
 	ioutil.WriteFile("/home/hugh/.balenarc.yml", urlString, 0755)
 }
 
