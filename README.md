@@ -14,7 +14,9 @@ go build
 
 - `bprompt -print`: Print a list of accounts that it knows about
 
-- `bprompt -switch`: Switch to one of those accounts.  This is mean
+- `bprompt -show`: Show the current state of your token and API endpoint
+
+- `bprompt -switch`: Switch to one of those accounts.  This is meant
   to:
   
   - symlink `~/.balena/token` to `~/.balena/token.[account name]`
@@ -28,12 +30,11 @@ go build
   like this to your `.bashrc`:
   
 ```
+PROMPT_COMMAND='export BALENA_REMINDER=$(path/to/bprompt -prompt)'
 PS1="$BALENA_REMINDER \d \t $"
-PROMPT_COMMAND='export BALENA_REMINDER=$(path/to/bprompt)'
 ```
 
 and then have a nice visual reminder of the account you're using:
-
 
 ```
 prod 🔥⚠😑 Fri Apr 24 14:09:32 $
@@ -41,9 +42,7 @@ prod 🔥⚠😑 Fri Apr 24 14:09:32 $
 
 # Future improvements
 
-- Actually make the updating work
-
-- Don't hardcode accounts or paths
+- Add configuration file for paths and tokens
 
 # License
 
