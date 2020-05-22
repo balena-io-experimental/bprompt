@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"os"
+	"path/filepath"
 	"strings"
-	"time"
-	// "os/user"
+
+	"gopkg.in/yaml.v2"
 )
 
 type balenaAccount struct {
@@ -23,6 +23,8 @@ type balenaAccount struct {
 }
 
 // FIXME: Hardcoding for now
+
+var balenaRcPath = "/home/hugh/.balenarc.yml"
 
 var myAccounts = []balenaAccount{
 	balenaAccount{
@@ -51,8 +53,12 @@ var myAccounts = []balenaAccount{
 	},
 }
 
+type balenaRc struct {
+	Url string `yaml:"balenaUrl"`
+}
+
 var balenaDir = "/home/hugh/.balena"
-var balenaOneTrueTOken = balenaDir + "/token"
+var balenaOneTrueToken = balenaDir + "/token"
 var tokenPrefix = "token."
 
 func printAllAccounts() {
@@ -85,9 +91,9 @@ func switchAccount(name string) {
 
 func updateOneTrueToken(targetAcct balenaAccount) {
 	fmt.Printf("[DEBUG] Switching to %+v\n", targetAcct)
-	src := fmt.Sprintf("%s/token.%s", "/home/hugh/.balena", targetAcct.TokenName)
+	src := fmt.Sprintf("%s/token.%s", balenaDir, targetAcct.TokenName)
 	fmt.Printf("[DEBUG] Source will be %s\n", src)
-	target := "/home/hugh/.balena/token"
+	target := balenaOneTrueToken
 	targetStat, _ := os.Lstat(target)
 	if targetStat != nil {
 		if string(targetStat.Mode().String()[0]) != "L" {
@@ -132,9 +138,42 @@ func findAllTokens() []string {
 }
 
 func findCurrentAcct() balenaAccount {
-	// FIXME: Just returning a random account for now
-	rand.Seed(time.Now().UnixNano())
-	return myAccounts[rand.Intn(len(myAccounts))]
+	currentBalenaRc := getCurrentBalenaRc()
+	currentToken := getCurrentTokenSymlinkTarget()
+	for _, acct := range myAccounts {
+		if acct.Url == currentBalenaRc.Url && currentToken == acct.TokenName {
+			return acct
+		}
+	}
+	return balenaAccount{}
+}
+
+func getCurrentTokenSymlinkTarget() string {
+	targetStat, _ := os.Lstat(balenaOneTrueToken)
+	if targetStat != nil {
+		if string(targetStat.Mode().String()[0]) != "L" {
+			log.Fatalf("%s not a symlink, I quit!", balenaOneTrueToken)
+		}
+	}
+	tokenSymlink, _ := os.Readlink(balenaOneTrueToken)
+	currentToken := filepath.Base(tokenSymlink)
+	currentToken = strings.SplitN(currentToken, ".", 2)[1]
+	return currentToken
+}
+
+func getCurrentBalenaRc() *balenaRc {
+	file, err := os.Open(balenaRcPath)
+	if err != nil {
+		log.Fatalf("Can't open balenaRcPath: %s\n", err.Error())
+	}
+	defer file.Close()
+	byteValue, _ := ioutil.ReadAll(file)
+	currentBalenaRc := balenaRc{}
+	err = yaml.Unmarshal(byteValue, &currentBalenaRc)
+	if err != nil {
+		log.Fatalf("Can't parse balenaRcPath: %s\n", err.Error())
+	}
+	return &currentBalenaRc
 }
 
 func showPromptForCurrentAccount() {
@@ -142,10 +181,18 @@ func showPromptForCurrentAccount() {
 	fmt.Printf("%s %s", currentAcct.Name, currentAcct.Emoji)
 }
 
+func showCurrentState() {
+	currentRc := getCurrentBalenaRc()
+	fmt.Printf("balenarc: %+v\n", currentRc)
+	currentToken := getCurrentTokenSymlinkTarget()
+	fmt.Printf("token symlink target: %+v\n", currentToken)
+}
+
 func main() {
 	printPtr := flag.Bool("print", false, "print accounts")
 	switchPtr := flag.String("switch", "", "switch accounts")
 	promptPtr := flag.Bool("prompt", false, "show prompt for current account")
+	showPtr := flag.Bool("show", false, "show state of balenaUrl and token")
 	flag.Parse()
 	if *printPtr == true {
 		printAllAccounts()
@@ -153,6 +200,10 @@ func main() {
 	}
 	if *switchPtr != "" {
 		switchAccount(*switchPtr)
+		os.Exit(0)
+	}
+	if *showPtr == true {
+		showCurrentState()
 		os.Exit(0)
 	}
 	if *promptPtr == true {
