@@ -91,9 +91,9 @@ func switchAccount(name string) {
 
 func updateOneTrueToken(targetAcct balenaAccount) {
 	fmt.Printf("[DEBUG] Switching to %+v\n", targetAcct)
-	src := fmt.Sprintf("%s/token.%s", "/home/hugh/.balena", targetAcct.TokenName)
+	src := fmt.Sprintf("%s/token.%s", balenaDir, targetAcct.TokenName)
 	fmt.Printf("[DEBUG] Source will be %s\n", src)
-	target := "/home/hugh/.balena/token"
+	target := balenaOneTrueToken
 	targetStat, _ := os.Lstat(target)
 	if targetStat != nil {
 		if string(targetStat.Mode().String()[0]) != "L" {
