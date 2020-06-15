@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -87,6 +88,16 @@ func switchAccount(name string) {
 	fmt.Printf("Found that token: %s\n", possibleToken)
 	updateOneTrueToken(targetAcct)
 	updateBalenaRc(targetAcct)
+	runBalenaWhoami()
+}
+
+func runBalenaWhoami() {
+	fmt.Printf("[DEBUG] balena whoami:\n")
+	out, err := exec.Command("balena", "whoami").Output()
+	if err != nil {
+		fmt.Printf("ERROR: %s\n", err.Error())
+	}
+	fmt.Printf("%s\n", out)
 }
 
 func updateOneTrueToken(targetAcct balenaAccount) {
