@@ -6,6 +6,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -60,6 +61,7 @@ type balenaRc struct {
 
 var balenaDir = "/home/hugh/.balena"
 var balenaOneTrueToken = balenaDir + "/token"
+var balenaTokenBackupDir = balenaDir + "/backup"
 var tokenPrefix = "token."
 
 func printAllAccounts() {
@@ -199,11 +201,38 @@ func showCurrentState() {
 	fmt.Printf("token symlink target: %+v\n", currentToken)
 }
 
+func restoreTokensFromBackup() {
+	backupTokens := findAllTokens(balenaTokenBackupDir)
+	for _, token := range backupTokens {
+
+		backupTokenFullPath := balenaTokenBackupDir + "/" + token
+		from, err := os.Open(backupTokenFullPath)
+		if err != nil {
+			fmt.Printf("[ERROR] Cannot copy %s, skipping: %s", backupTokenFullPath, err.Error())
+			continue
+		}
+		defer from.Close()
+		restoredTokenFullPath := balenaDir + "/" + token
+		to, err := os.OpenFile(restoredTokenFullPath, os.O_RDWR|os.O_CREATE, 0640)
+		if err != nil {
+			fmt.Printf("[ERROR] Cannot open %s, skipping: %s", backupTokenFullPath, err.Error())
+			continue
+		}
+		fmt.Printf("[DEBUG] Restoring %s to %s\n", backupTokenFullPath, restoredTokenFullPath)
+		defer to.Close()
+		_, err = io.Copy(to, from)
+		if err != nil {
+			fmt.Printf("[ERROR] Problem restoring: %s\n", err.Error())
+		}
+	}
+}
+
 func main() {
 	printPtr := flag.Bool("print", false, "print accounts")
 	switchPtr := flag.String("switch", "", "switch accounts")
 	promptPtr := flag.Bool("prompt", false, "show prompt for current account")
 	showPtr := flag.Bool("show", false, "show state of balenaUrl and token")
+	restorePtr := flag.Bool("restore", false, "restore token files from backup (ie, from ~/.balena/backup to ~/.balena)")
 	flag.Parse()
 	if *printPtr == true {
 		printAllAccounts()
@@ -219,6 +248,10 @@ func main() {
 	}
 	if *promptPtr == true {
 		showPromptForCurrentAccount()
+		os.Exit(0)
+	}
+	if *restorePtr == true {
+		restoreTokensFromBackup()
 		os.Exit(0)
 	}
 }
