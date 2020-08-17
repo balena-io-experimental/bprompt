@@ -124,7 +124,7 @@ func updateBalenaRc(targetAcct balenaAccount) {
 }
 
 func findMatchingToken(targetToken string) string {
-	allTokens := findAllTokens()
+	allTokens := findAllTokens(balenaDir)
 	for _, foundToken := range allTokens {
 		if foundToken == fmt.Sprintf("%s%s", tokenPrefix, targetToken) {
 			// Return first match
@@ -134,8 +134,8 @@ func findMatchingToken(targetToken string) string {
 	return ""
 }
 
-func findAllTokens() []string {
-	files, err := ioutil.ReadDir(balenaDir)
+func findAllTokens(targetDir string) []string {
+	files, err := ioutil.ReadDir(targetDir)
 	if err != nil {
 		log.Fatal(err)
 	}
