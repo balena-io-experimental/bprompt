@@ -71,7 +71,7 @@ func printAllAccounts() {
 	}
 }
 
-func switchAccount(name string) {
+func switchAccount(name string, forceUpdate bool) {
 	var targetAcct balenaAccount
 	for _, acct := range myAccounts {
 		if acct.Name == name {
@@ -88,7 +88,7 @@ func switchAccount(name string) {
 		log.Fatal("I can't find that token!")
 	}
 	fmt.Printf("Found that token: %s\n", possibleToken)
-	updateOneTrueToken(targetAcct)
+	updateOneTrueToken(targetAcct, forceUpdate)
 	updateBalenaRc(targetAcct)
 	runBalenaWhoami()
 }
@@ -102,19 +102,19 @@ func runBalenaWhoami() {
 	fmt.Printf("%s\n", out)
 }
 
-func updateOneTrueToken(targetAcct balenaAccount) {
+func updateOneTrueToken(targetAcct balenaAccount, forceUpdate bool) {
 	fmt.Printf("[DEBUG] Switching to %+v\n", targetAcct)
 	src := fmt.Sprintf("%s/token.%s", balenaDir, targetAcct.TokenName)
 	fmt.Printf("[DEBUG] Source will be %s\n", src)
 	target := balenaOneTrueToken
 	targetStat, _ := os.Lstat(target)
-	if targetStat != nil {
+	if forceUpdate == false && targetStat != nil {
 		if string(targetStat.Mode().String()[0]) != "L" {
 			log.Fatalf("%s not a symlink, refusing to remove it! Stat: %+v", target, targetStat.Mode().String())
 		}
 	}
 	if err := os.Remove(target); err != nil {
-		log.Fatalf("Could not remove %s!")
+		log.Printf("Could not remove %s!", target)
 	}
 	os.Symlink(src, target)
 }
@@ -230,6 +230,7 @@ func restoreTokensFromBackup() {
 func main() {
 	printPtr := flag.Bool("print", false, "print accounts")
 	switchPtr := flag.String("switch", "", "switch accounts")
+	switchForcePtr := flag.String("switchForce", "", "switch accounts and delete ~/.balena/token even if it is a regular file")
 	promptPtr := flag.Bool("prompt", false, "show prompt for current account")
 	showPtr := flag.Bool("show", false, "show state of balenaUrl and token")
 	restorePtr := flag.Bool("restore", false, "restore token files from backup (ie, from ~/.balena/backup to ~/.balena)")
@@ -239,7 +240,11 @@ func main() {
 		os.Exit(0)
 	}
 	if *switchPtr != "" {
-		switchAccount(*switchPtr)
+		switchAccount(*switchPtr, false)
+		os.Exit(0)
+	}
+	if *switchForcePtr != "" {
+		switchAccount(*switchForcePtr, true)
 		os.Exit(0)
 	}
 	if *showPtr == true {
